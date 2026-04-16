@@ -5,7 +5,7 @@ export const manifest = setupManifest({
   id: 'qbittorrent',
   title: 'qBittorrent',
   license: 'GPL-2.0',
-  packageRepo: 'https://github.com/Start9Labs/qbittorrent-startos',
+  packageRepo: 'https://github.com/saiththerobo/qbittorrent-startos',
   upstreamRepo: 'https://github.com/qbittorrent/qBittorrent',
   marketingUrl: 'https://www.qbittorrent.org/',
   donationUrl: 'https://www.qbittorrent.org/donate',
