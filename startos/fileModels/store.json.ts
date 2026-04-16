@@ -3,6 +3,7 @@ import { sdk } from '../sdk'
 
 const shape = z.object({
   adminPassword: z.string().optional().catch(undefined),
+  downloadDestination: z.enum(['local', 'filebrowser']).optional().catch(undefined),
 })
 
 export const storeJson = FileHelper.json(

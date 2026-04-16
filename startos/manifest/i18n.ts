@@ -6,6 +6,14 @@ export const short = {
   fr_FR: 'Client BitTorrent open source avec une interface web',
 }
 
+export const filebrowserDescription = {
+  en_US: 'Used to save downloads to File Browser',
+  es_ES: 'Usado para guardar descargas en File Browser',
+  de_DE: 'Wird verwendet, um Downloads in File Browser zu speichern',
+  pl_PL: 'Używany do zapisywania pobranych plików w File Browser',
+  fr_FR: 'Utilisé pour enregistrer les téléchargements dans File Browser',
+}
+
 export const long = {
   en_US:
     'qBittorrent is a free and open-source BitTorrent client. It features an integrated web UI for remote management, RSS feed support, torrent search, sequential downloading, and fine-grained torrent management. No ads, no bundled software.',

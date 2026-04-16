@@ -21,6 +21,16 @@ const dict = {
 
   // init/initializeService.ts
   'Retrieve your admin credentials': 12,
+
+  // actions/downloadDestination.ts
+  'Download Destination': 13,
+  'File Browser': 14,
+  'Local Storage': 16,
+  'Select Download Destination': 17,
+  'Service qBittorrent uses to save downloads': 18,
+
+  // init/taskSelectDownloadDestination.ts
+  'Select where qBittorrent saves downloads': 19,
 } as const
 
 /**

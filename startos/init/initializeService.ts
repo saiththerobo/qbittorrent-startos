@@ -32,7 +32,7 @@ export const initializeService = sdk.setupOnInit(async (effects, kind) => {
     len: 22,
   })
   const passwordHash = await hashQBittorrentPassword(adminPassword)
-  await storeJson.write(effects, { adminPassword })
+  await storeJson.merge(effects, { adminPassword })
 
   // Pre-write qBittorrent.conf with the generated password hash so qBittorrent
   // starts with known credentials on first boot (no temp-password prompt).
