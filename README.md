@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="icon.svg" alt="qBittorrent Logo" width="21%">
+  <img src="icon.png" alt="qBittorrent Logo" width="21%">
 </p>
 
 # qBittorrent on StartOS
