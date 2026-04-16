@@ -1,16 +1,12 @@
 <p align="center">
-  <img src="icon.svg" alt="Hello World Logo" width="21%">
+  <img src="icon.svg" alt="qBittorrent Logo" width="21%">
 </p>
 
-# Hello World on StartOS
+# qBittorrent on StartOS
 
-> **Upstream repo:** <https://github.com/Start9Labs/hello-world>
+> **Upstream repo:** <https://github.com/qbittorrent/qBittorrent>
 
-A minimal reference service for StartOS. It displays a simple web page — nothing more. Use [this repository](https://github.com/Start9Labs/hello-world-startos) as a template when packaging a new service for StartOS.
-
-## Getting Started
-
-To learn how to use this template to create your own StartOS service package, see the [Packaging Guide](https://docs.start9.com/packaging).
+qBittorrent is a free and open-source BitTorrent client with an integrated web UI for remote management. This package runs the official `qbittorrent-nox` (headless) image on StartOS.
 
 ---
 
@@ -26,7 +22,6 @@ To learn how to use this template to create your own StartOS service package, se
 - [Health Checks](#health-checks)
 - [Dependencies](#dependencies)
 - [Limitations and Differences](#limitations-and-differences)
-- [What Is Unchanged from Upstream](#what-is-unchanged-from-upstream)
 - [Contributing](#contributing)
 - [Quick Reference for AI Consumers](#quick-reference-for-ai-consumers)
 
@@ -34,39 +29,53 @@ To learn how to use this template to create your own StartOS service package, se
 
 ## Image and Container Runtime
 
-| Property      | Value                                  |
-| ------------- | -------------------------------------- |
-| Image         | `ghcr.io/start9labs/hello-world`       |
-| Architectures | x86_64, aarch64, riscv64               |
-| Command       | `hello-world`                          |
+| Property      | Value                                            |
+| ------------- | ------------------------------------------------ |
+| Image         | `qbittorrentofficial/qbittorrent-nox:5.1.4-2`   |
+| Architectures | x86_64, aarch64                                  |
+| Entrypoint    | Upstream entrypoint (`sdk.useEntrypoint()`)      |
+
+**Environment variables set at runtime:**
+
+| Variable        | Value  | Purpose                     |
+| --------------- | ------ | --------------------------- |
+| `QBT_EULA`      | accept | Accept the upstream EULA    |
+| `QBT_WEBUI_PORT`| 8080   | Lock the web UI to port 8080|
 
 ---
 
 ## Volume and Data Layout
 
-| Volume | Mount Point | Purpose         |
-| ------ | ----------- | --------------- |
-| `main` | `/data`     | Persistent data |
+| Volume      | Mount Point  | Purpose                              |
+| ----------- | ------------ | ------------------------------------ |
+| `main`      | `/config`    | qBittorrent config and internal state|
+| `downloads` | `/downloads` | Downloaded files                     |
+
+`store.json` (inside `main`) holds the generated admin password for display via the Get Admin Credentials action.
 
 ---
 
 ## Installation and First-Run Flow
 
-No special setup. Install and start — the web page is immediately available.
+1. A 22-character alphanumeric admin password is generated and written to `store.json`.
+2. A minimal `qBittorrent.conf` is written to the `main` volume via `SubContainer.withTemp()`. It accepts the EULA and disables localhost auth (`WebUI\LocalhostAuthEnabled=false`) so the bootstrap step can call the API without a session cookie.
+3. A `runUntilSuccess` chain starts qBittorrent temporarily, waits for it to be healthy on port 8080, then calls `POST /api/v2/app/setPreferences` to set the generated password, re-enable localhost auth, and configure `/downloads` as the default save path.
+4. A critical task is created prompting the user to run the **Get Admin Credentials** action before first use.
+5. On every normal startup a `chown -R 1000:1000` oneshot fixes volume ownership before the main daemon starts.
 
 ---
 
 ## Configuration Management
 
-No configurable settings. The service runs with no user-facing configuration.
+qBittorrent stores its own settings in `/config/qBittorrent/qBittorrent.conf`. All user-facing configuration (download paths, speed limits, etc.) is managed directly through the qBittorrent web UI — there are no StartOS-side config actions beyond credential retrieval.
 
 ---
 
 ## Network Access and Interfaces
 
-| Interface | Port | Protocol | Purpose              |
-| --------- | ---- | -------- | -------------------- |
-| Web UI    | 80   | HTTP     | Hello World web page |
+| Interface | Port | Protocol | Purpose                  |
+| --------- | ---- | -------- | ------------------------ |
+| Web UI    | 8080 | HTTP     | qBittorrent web interface|
 
 **Access methods:**
 
@@ -75,11 +84,17 @@ No configurable settings. The service runs with no user-facing configuration.
 - Tor `.onion` address
 - Custom domains (if configured)
 
+The BitTorrent peer port (6881 by default) is managed by qBittorrent itself and is not exposed as a StartOS interface. Configure port forwarding in your router if incoming peer connections are required.
+
 ---
 
 ## Actions (StartOS UI)
 
-None.
+| Action                  | Visibility | Description                                       |
+| ----------------------- | ---------- | ------------------------------------------------- |
+| Get Admin Credentials   | Hidden     | Displays the generated admin username and password|
+
+The action is surfaced as a critical task on fresh install. Username is always `admin`; password is the generated value stored in `store.json`.
 
 ---
 
@@ -87,17 +102,18 @@ None.
 
 **Included in backup:**
 
-- `main` volume
+- `main` volume (config + store.json)
+- `downloads` volume (all downloaded files)
 
-**Restore behavior:** Volume is fully restored before the service starts.
+**Restore behavior:** Both volumes are fully restored before the service starts.
 
 ---
 
 ## Health Checks
 
-| Check         | Method              | Messages                                                           |
-| ------------- | ------------------- | ------------------------------------------------------------------ |
-| Web Interface | Port listening (80) | Success: "The web interface is ready" / Error: "The web interface is not ready" |
+| Check         | Method               | Messages                                                                          |
+| ------------- | -------------------- | --------------------------------------------------------------------------------- |
+| Web Interface | Port listening (8080)| Success: "The web interface is ready" / Error: "The web interface is not ready"   |
 
 ---
 
@@ -109,13 +125,9 @@ None.
 
 ## Limitations and Differences
 
-1. **No meaningful functionality** — this is a reference/template package only
-
----
-
-## What Is Unchanged from Upstream
-
-The service is identical to upstream. There are no modifications.
+1. **Peer port not exposed** — the BitTorrent peer port is not registered as a StartOS interface. Incoming connections require manual router port forwarding.
+2. **Admin credentials are fixed at install** — there is no "Reset Password" action yet. To reset, uninstall and reinstall the service.
+3. **Timezone hardcoded** — the container runs in UTC. qBittorrent display timestamps reflect UTC.
 
 ---
 
@@ -128,14 +140,28 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for build instructions and development wo
 ## Quick Reference for AI Consumers
 
 ```yaml
-package_id: hello-world
-image: ghcr.io/start9labs/hello-world
-architectures: [x86_64, aarch64, riscv64]
+package_id: qbittorrent
+image: qbittorrentofficial/qbittorrent-nox:5.1.4-2
+architectures: [x86_64, aarch64]
 volumes:
-  main: /data
+  main: /config       # qBittorrent config; also holds store.json
+  downloads: /downloads
 ports:
-  ui: 80
+  ui: 8080
+env_vars:
+  QBT_EULA: accept
+  QBT_WEBUI_PORT: "8080"
 dependencies: none
-startos_managed_env_vars: none
-actions: none
+actions:
+  get-admin-credentials:
+    visibility: hidden
+    triggered_by: critical task on install
+    returns: username (admin) + masked copyable password
+init_flow:
+  - SubContainer.withTemp writes initial qBittorrent.conf (EULA accepted, localhost auth bypassed)
+  - runUntilSuccess: starts qBittorrent, calls setPreferences to set password + re-enable auth
+  - creates critical task pointing to get-admin-credentials action
+main_flow:
+  - chown oneshot fixes volume ownership (1000:1000)
+  - primary daemon starts via sdk.useEntrypoint()
 ```

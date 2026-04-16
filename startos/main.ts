@@ -3,33 +3,30 @@ import { sdk } from './sdk'
 import { uiPort } from './utils'
 
 export const main = sdk.setupMain(async ({ effects }) => {
-  /**
-   * ======================== Setup (optional) ========================
-   *
-   * In this section, we fetch any resources or run any desired preliminary commands.
-   */
-  console.info(i18n('Starting Hello World!'))
+  console.info(i18n('Starting qBittorrent'))
 
-  /**
-   * ======================== Daemons ========================
-   *
-   * In this section, we create one or more daemons that define the service runtime.
-   *
-   * Each daemon defines its own health check, which can optionally be exposed to the user.
-   */
+  const appMounts = sdk.Mounts.of()
+    .mountVolume({ volumeId: 'main', subpath: null, mountpoint: '/config', readonly: false })
+    .mountVolume({ volumeId: 'downloads', subpath: null, mountpoint: '/downloads', readonly: false })
+
+  const appSub = await sdk.SubContainer.of(
+    effects,
+    { imageId: 'qbittorrent' },
+    appMounts,
+    'qbittorrent-main',
+  )
+
   return sdk.Daemons.of(effects).addDaemon('primary', {
-    subcontainer: await sdk.SubContainer.of(
-      effects,
-      { imageId: 'hello-world' },
-      sdk.Mounts.of().mountVolume({
-        volumeId: 'main',
-        subpath: null,
-        mountpoint: '/data',
-        readonly: false,
-      }),
-      'hello-world-sub',
-    ),
-    exec: { command: ['hello-world'] },
+    subcontainer: appSub,
+    exec: {
+      // Use the upstream entrypoint (tini -> entrypoint.sh) which handles
+      // user switching (doas -u qbtUser), directory chown, and legal notice.
+      command: sdk.useEntrypoint(),
+      env: {
+        QBT_LEGAL_NOTICE: 'confirm',
+        QBT_WEBUI_PORT: String(uiPort),
+      },
+    },
     ready: {
       display: i18n('Web Interface'),
       fn: () =>
@@ -37,6 +34,7 @@ export const main = sdk.setupMain(async ({ effects }) => {
           successMessage: i18n('The web interface is ready'),
           errorMessage: i18n('The web interface is not ready'),
         }),
+      gracePeriod: 30_000,
     },
     requires: [],
   })
