@@ -3,7 +3,7 @@ import { manifest as filebrowserManifest } from 'filebrowser-startos/startos/man
 import { storeJson } from './fileModels/store.json'
 import { i18n } from './i18n'
 import { sdk } from './sdk'
-import { uiPort } from './utils'
+import { hashQBittorrentPassword, uiPort } from './utils'
 
 const qbtConf = FileHelper.string({
   base: sdk.volumes.main,
@@ -21,14 +21,25 @@ export const main = sdk.setupMain(async ({ effects }) => {
       ? '/mnt/filebrowser/qbittorrent-downloads'
       : '/downloads'
 
-  // Update DefaultSavePath in the qBittorrent config on every startup so the
-  // path stays in sync with the selected download destination.
+  // Read the adminPassword from store with .const(effects) so the service restarts
+  // when the reset-admin-password action is used.
+  const adminPassword = await storeJson.read((s) => s.adminPassword).const(effects)
+
+  // Update DefaultSavePath and WebUI password in the qBittorrent config on every
+  // startup so they stay in sync with the store values.
   const currentContent = await qbtConf.read().once()
   if (currentContent) {
-    const updatedContent = currentContent.replace(
+    let updatedContent = currentContent.replace(
       /Session\\DefaultSavePath=.*/,
       `Session\\DefaultSavePath=${savePath}`,
     )
+    if (adminPassword) {
+      const passwordHash = await hashQBittorrentPassword(adminPassword)
+      updatedContent = updatedContent.replace(
+        /WebUI\\Password_PBKDF2=.*/,
+        `WebUI\\Password_PBKDF2="${passwordHash}"`,
+      )
+    }
     if (updatedContent !== currentContent) {
       await qbtConf.write(effects, updatedContent)
     }

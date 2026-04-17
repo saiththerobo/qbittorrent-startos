@@ -31,6 +31,15 @@ const dict = {
 
   // init/taskSelectDownloadDestination.ts
   'Select where qBittorrent saves downloads': 19,
+
+  // actions/resetAdminPassword.ts
+  'Reset Admin Password': 20,
+  'Change the password for the qBittorrent admin account': 21,
+  'Restart the service after saving for the new password to take effect.': 22,
+  'New Password': 23,
+  'The new password for the qBittorrent admin account': 24,
+  'Password Saved': 25,
+  'Admin password updated. Restart qBittorrent for the change to take effect.': 26,
 } as const
 
 /**
