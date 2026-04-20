@@ -4,7 +4,7 @@ import { long, short, filebrowserDescription } from './i18n'
 export const manifest = setupManifest({
   id: 'qbittorrent',
   title: 'qBittorrent',
-  license: 'GPL-2.0',
+  license: 'GPL-3.0',
   packageRepo: 'https://github.com/saiththerobo/qbittorrent-startos',
   upstreamRepo: 'https://github.com/qbittorrent/qBittorrent',
   marketingUrl: 'https://www.qbittorrent.org/',
