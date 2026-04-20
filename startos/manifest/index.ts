@@ -14,7 +14,7 @@ export const manifest = setupManifest({
   volumes: ['main', 'downloads'],
   images: {
     qbittorrent: {
-      source: { dockerTag: 'qbittorrentofficial/qbittorrent-nox:5.1.4-2' },
+      source: { dockerTag: 'qbittorrentofficial/qbittorrent-nox:5.1.4-lt2-2' },
       arch: ['x86_64', 'aarch64'],
     },
   },
